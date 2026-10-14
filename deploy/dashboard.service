@@ -1,0 +1,27 @@
+[Unit]
+Description=Waveshare 10.85 inch Go dashboard
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=epaper
+Group=epaper
+SupplementaryGroups=spi gpio
+WorkingDirectory=/opt/epaper-dashboard
+StateDirectory=epaper-dashboard
+StateDirectoryMode=0700
+ExecStart=/opt/epaper-dashboard/dashboard -config /opt/epaper-dashboard/dashboard.json -display -output /var/lib/epaper-dashboard/dashboard.png
+Restart=on-failure
+RestartSec=15
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/epaper-dashboard
+
+[Install]
+WantedBy=multi-user.target
