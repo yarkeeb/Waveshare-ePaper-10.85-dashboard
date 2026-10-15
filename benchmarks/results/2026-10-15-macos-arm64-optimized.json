@@ -1,0 +1,1756 @@
+{
+  "metadata": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python": "3.12.14 (main, Aug 25 2026, 13:50:33) [Clang 22.1.3 ]",
+    "pillow": "12.3.0",
+    "go": "go version go1.26.7 darwin/arm64",
+    "go_commit": "ebb0ee9fb5c620066cb8207d39872e9482b573ef",
+    "python_commit": "ceced5eb8a0c17c58d73064a687f924bc3e3b461",
+    "iterations": 100,
+    "repeats": 5,
+    "startups": 10,
+    "fixture_sha256": "a363ea673b3d68e524b3e6f4f949fd313b4bd120569a96b0c04e155099a59525",
+    "go_working_diff": "diff --git a/internal/display/panel.go b/internal/display/panel.go\nindex 25166b7..6ce7c4e 100644\n--- a/internal/display/panel.go\n+++ b/internal/display/panel.go\n@@ -127,6 +127,21 @@ func Pack(img image.Image) ([]byte, error) {\n \t\treturn nil, errors.New(\"panel image must be 1360x480\")\n \t}\n \tb := make([]byte, Width*Height/8)\n+\tif gray, ok := img.(*image.Gray); ok {\n+\t\t// Gray.RGBA expands each byte by 257, so the generic luminance\n+\t\t// threshold is exactly its high bit. Pack eight pixels at once,\n+\t\t// avoiding interface calls and repeated writes to the same byte.\n+\t\tfor y := 0; y < Height; y++ {\n+\t\t\trow := gray.Pix[y*gray.Stride : y*gray.Stride+Width]\n+\t\t\tdst := b[y*(Width/8) : (y+1)*(Width/8)]\n+\t\t\tfor x := range dst {\n+\t\t\t\tp := row[x*8 : x*8+8]\n+\t\t\t\tdst[x] = p[0]&0x80 | (p[1]>>1)&0x40 | (p[2]>>2)&0x20 | (p[3]>>3)&0x10 |\n+\t\t\t\t\t(p[4]>>4)&0x08 | (p[5]>>5)&0x04 | (p[6]>>6)&0x02 | p[7]>>7\n+\t\t\t}\n+\t\t}\n+\t\treturn b, nil\n+\t}\n \tmin := img.Bounds().Min\n \tfor y := 0; y < Height; y++ {\n \t\tfor x := 0; x < Width; x++ {\n",
+    "harness_sha256": {
+      "benchmarks/run.py": "b756dd9229c189f84b1804cd1b2a2994a9b6a630c276fd9d80a54bc5216d4155",
+      "benchmarks/python_runner.py": "57d3f0893a79cc000baff046781d16a10981526d0590a4f65fe884ad8d5f78e2",
+      "benchmarks/go/main.go": "4006fee58513d6ecce9ec1b577b9bac776c30e40f324921294d9559c025ca861"
+    },
+    "cpu": "Apple M5 Pro",
+    "ram_bytes": 68719476736
+  },
+  "samples": [
+    {
+      "kind": "steady",
+      "repeat": 0,
+      "scenario": "default",
+      "implementation": "python",
+      "render_ms": 4.05897167,
+      "pack_ms": 0.12120042,
+      "png_ms": 0.6120658299999999,
+      "render_pack_ms": 3.91639042,
+      "process_ms": 961.927291,
+      "peak_rss_mib": 32.953125
+    },
+    {
+      "kind": "steady",
+      "repeat": 0,
+      "scenario": "music",
+      "implementation": "go",
+      "pack_ms": 0.09374333,
+      "png_ms": 3.4640325,
+      "render_ms": 3.14592292,
+      "render_pack_ms": 3.2403316699999998,
+      "process_ms": 1070.827958,
+      "peak_rss_mib": 15.96875
+    },
+    {
+      "kind": "steady",
+      "repeat": 0,
+      "scenario": "devices",
+      "implementation": "go",
+      "pack_ms": 0.09739167,
+      "png_ms": 3.64946334,
+      "render_ms": 3.54947917,
+      "render_pack_ms": 3.43803958,
+      "process_ms": 1154.244584,
+      "peak_rss_mib": 14.890625
+    },
+    {
+      "kind": "steady",
+      "repeat": 0,
+      "scenario": "usage",
+      "implementation": "go",
+      "pack_ms": 0.09329458,
+      "png_ms": 3.4232033399999997,
+      "render_ms": 3.271245,
+      "render_pack_ms": 3.31953459,
+      "process_ms": 1087.785666,
+      "peak_rss_mib": 14.796875
+    },
+    {
+      "kind": "steady",
+      "repeat": 0,
+      "scenario": "usage",
+      "implementation": "python",
+      "render_ms": 4.33927042,
+      "pack_ms": 0.12033875,
+      "png_ms": 0.61401958,
+      "render_pack_ms": 4.48009959,
+      "process_ms": 1053.720417,
+      "peak_rss_mib": 30.984375
+    },
+    {
+      "kind": "steady",
+      "repeat": 0,
+      "scenario": "default",
+      "implementation": "go",
+      "pack_ms": 0.09358292,
+      "png_ms": 3.41430583,
+      "render_ms": 3.19199667,
+      "render_pack_ms": 3.28535584,
+      "process_ms": 1075.353125,
+      "peak_rss_mib": 15.71875
+    },
+    {
+      "kind": "steady",
+      "repeat": 0,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "pack_ms": 0.09435625,
+      "png_ms": 3.4400525,
+      "render_ms": 3.25382875,
+      "render_pack_ms": 3.35289417,
+      "process_ms": 1091.445625,
+      "peak_rss_mib": 15.375
+    },
+    {
+      "kind": "steady",
+      "repeat": 0,
+      "scenario": "music",
+      "implementation": "python",
+      "render_ms": 3.53967084,
+      "pack_ms": 0.12018958,
+      "png_ms": 0.61161875,
+      "render_pack_ms": 3.72203417,
+      "process_ms": 887.5115,
+      "peak_rss_mib": 30.890625
+    },
+    {
+      "kind": "steady",
+      "repeat": 0,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "render_ms": 4.16208792,
+      "pack_ms": 0.12129792,
+      "png_ms": 0.61205208,
+      "render_pack_ms": 4.3009783399999995,
+      "process_ms": 1014.398417,
+      "peak_rss_mib": 30.75
+    },
+    {
+      "kind": "steady",
+      "repeat": 0,
+      "scenario": "devices",
+      "implementation": "python",
+      "render_ms": 4.49466542,
+      "pack_ms": 0.11875709,
+      "png_ms": 0.6110495899999999,
+      "render_pack_ms": 4.91709375,
+      "process_ms": 1120.067208,
+      "peak_rss_mib": 31.625
+    },
+    {
+      "kind": "steady",
+      "repeat": 1,
+      "scenario": "devices",
+      "implementation": "go",
+      "pack_ms": 0.09532834,
+      "png_ms": 3.69178666,
+      "render_ms": 3.34739625,
+      "render_pack_ms": 3.45209416,
+      "process_ms": 1145.792542,
+      "peak_rss_mib": 15.421875
+    },
+    {
+      "kind": "steady",
+      "repeat": 1,
+      "scenario": "default",
+      "implementation": "go",
+      "pack_ms": 0.09815542,
+      "png_ms": 3.48798583,
+      "render_ms": 3.25605958,
+      "render_pack_ms": 3.36196917,
+      "process_ms": 1097.021333,
+      "peak_rss_mib": 14.78125
+    },
+    {
+      "kind": "steady",
+      "repeat": 1,
+      "scenario": "music",
+      "implementation": "python",
+      "render_ms": 3.53797208,
+      "pack_ms": 0.12771167,
+      "png_ms": 0.6277433299999999,
+      "render_pack_ms": 3.7322075,
+      "process_ms": 891.99925,
+      "peak_rss_mib": 31.171875
+    },
+    {
+      "kind": "steady",
+      "repeat": 1,
+      "scenario": "default",
+      "implementation": "python",
+      "render_ms": 3.71958583,
+      "pack_ms": 0.1242825,
+      "png_ms": 0.5940354200000001,
+      "render_pack_ms": 3.8291725,
+      "process_ms": 916.051375,
+      "peak_rss_mib": 30.984375
+    },
+    {
+      "kind": "steady",
+      "repeat": 1,
+      "scenario": "devices",
+      "implementation": "python",
+      "render_ms": 4.49466375,
+      "pack_ms": 0.1201525,
+      "png_ms": 0.6158720799999999,
+      "render_pack_ms": 4.619565,
+      "process_ms": 1088.806084,
+      "peak_rss_mib": 31.140625
+    },
+    {
+      "kind": "steady",
+      "repeat": 1,
+      "scenario": "usage",
+      "implementation": "python",
+      "render_ms": 4.36799959,
+      "pack_ms": 0.12101042,
+      "png_ms": 0.6157345799999999,
+      "render_pack_ms": 4.48059458,
+      "process_ms": 1054.336333,
+      "peak_rss_mib": 31.015625
+    },
+    {
+      "kind": "steady",
+      "repeat": 1,
+      "scenario": "usage",
+      "implementation": "go",
+      "pack_ms": 0.09542917,
+      "png_ms": 3.431605,
+      "render_ms": 3.2626108300000003,
+      "render_pack_ms": 3.34762834,
+      "process_ms": 1091.545375,
+      "peak_rss_mib": 14.828125
+    },
+    {
+      "kind": "steady",
+      "repeat": 1,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "render_ms": 4.19201333,
+      "pack_ms": 0.12070958999999999,
+      "png_ms": 0.61204375,
+      "render_pack_ms": 4.29187292,
+      "process_ms": 1018.254584,
+      "peak_rss_mib": 30.9375
+    },
+    {
+      "kind": "steady",
+      "repeat": 1,
+      "scenario": "music",
+      "implementation": "go",
+      "pack_ms": 0.09595709,
+      "png_ms": 3.4776729100000003,
+      "render_ms": 3.17678334,
+      "render_pack_ms": 3.2612225,
+      "process_ms": 1079.350833,
+      "peak_rss_mib": 16.5625
+    },
+    {
+      "kind": "steady",
+      "repeat": 1,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "pack_ms": 0.10954959,
+      "png_ms": 3.60149125,
+      "render_ms": 3.34286,
+      "render_pack_ms": 3.4147266600000004,
+      "process_ms": 1125.134625,
+      "peak_rss_mib": 15.609375
+    },
+    {
+      "kind": "steady",
+      "repeat": 2,
+      "scenario": "usage",
+      "implementation": "go",
+      "pack_ms": 0.09422917,
+      "png_ms": 3.42982292,
+      "render_ms": 3.30488042,
+      "render_pack_ms": 3.37101291,
+      "process_ms": 1098.327792,
+      "peak_rss_mib": 15.765625
+    },
+    {
+      "kind": "steady",
+      "repeat": 2,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "render_ms": 4.18890667,
+      "pack_ms": 0.12082583,
+      "png_ms": 0.61382292,
+      "render_pack_ms": 4.30999458,
+      "process_ms": 1017.607625,
+      "peak_rss_mib": 30.9375
+    },
+    {
+      "kind": "steady",
+      "repeat": 2,
+      "scenario": "default",
+      "implementation": "python",
+      "render_ms": 3.83167708,
+      "pack_ms": 0.12135583,
+      "png_ms": 0.61778958,
+      "render_pack_ms": 3.8673475,
+      "process_ms": 933.11075,
+      "peak_rss_mib": 30.859375
+    },
+    {
+      "kind": "steady",
+      "repeat": 2,
+      "scenario": "music",
+      "implementation": "go",
+      "pack_ms": 0.09539625,
+      "png_ms": 3.45914916,
+      "render_ms": 3.18130583,
+      "render_pack_ms": 3.27406417,
+      "process_ms": 1078.544417,
+      "peak_rss_mib": 15.125
+    },
+    {
+      "kind": "steady",
+      "repeat": 2,
+      "scenario": "music",
+      "implementation": "python",
+      "render_ms": 3.54297584,
+      "pack_ms": 0.12184458000000001,
+      "png_ms": 0.6270775,
+      "render_pack_ms": 3.70753375,
+      "process_ms": 888.683458,
+      "peak_rss_mib": 31.03125
+    },
+    {
+      "kind": "steady",
+      "repeat": 2,
+      "scenario": "usage",
+      "implementation": "python",
+      "render_ms": 4.3738570800000005,
+      "pack_ms": 0.12123125,
+      "png_ms": 0.59790333,
+      "render_pack_ms": 4.50767334,
+      "process_ms": 1056.237,
+      "peak_rss_mib": 30.84375
+    },
+    {
+      "kind": "steady",
+      "repeat": 2,
+      "scenario": "default",
+      "implementation": "go",
+      "pack_ms": 0.096525,
+      "png_ms": 3.42095292,
+      "render_ms": 3.2467,
+      "render_pack_ms": 3.33730458,
+      "process_ms": 1087.518834,
+      "peak_rss_mib": 14.890625
+    },
+    {
+      "kind": "steady",
+      "repeat": 2,
+      "scenario": "devices",
+      "implementation": "go",
+      "pack_ms": 0.09579791,
+      "png_ms": 3.68442375,
+      "render_ms": 3.3926,
+      "render_pack_ms": 3.45183542,
+      "process_ms": 1144.558958,
+      "peak_rss_mib": 14.890625
+    },
+    {
+      "kind": "steady",
+      "repeat": 2,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "pack_ms": 0.09725792,
+      "png_ms": 3.45286125,
+      "render_ms": 3.29494125,
+      "render_pack_ms": 3.6929275,
+      "process_ms": 1132.583375,
+      "peak_rss_mib": 15.671875
+    },
+    {
+      "kind": "steady",
+      "repeat": 2,
+      "scenario": "devices",
+      "implementation": "python",
+      "render_ms": 4.5100975,
+      "pack_ms": 0.12163291999999999,
+      "png_ms": 0.62624375,
+      "render_pack_ms": 4.63269375,
+      "process_ms": 1097.211792,
+      "peak_rss_mib": 31.15625
+    },
+    {
+      "kind": "steady",
+      "repeat": 3,
+      "scenario": "devices",
+      "implementation": "python",
+      "render_ms": 4.5753141600000005,
+      "pack_ms": 0.12179542,
+      "png_ms": 0.62803292,
+      "render_pack_ms": 4.69223417,
+      "process_ms": 1104.065125,
+      "peak_rss_mib": 32.15625
+    },
+    {
+      "kind": "steady",
+      "repeat": 3,
+      "scenario": "default",
+      "implementation": "python",
+      "render_ms": 3.73201208,
+      "pack_ms": 0.12164875,
+      "png_ms": 0.61077333,
+      "render_pack_ms": 3.8984004199999998,
+      "process_ms": 925.343875,
+      "peak_rss_mib": 30.828125
+    },
+    {
+      "kind": "steady",
+      "repeat": 3,
+      "scenario": "music",
+      "implementation": "python",
+      "render_ms": 3.57834125,
+      "pack_ms": 0.12353875,
+      "png_ms": 0.6195975,
+      "render_pack_ms": 3.68272292,
+      "process_ms": 892.540959,
+      "peak_rss_mib": 31.046875
+    },
+    {
+      "kind": "steady",
+      "repeat": 3,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "render_ms": 4.18995917,
+      "pack_ms": 0.12200042,
+      "png_ms": 0.62384167,
+      "render_pack_ms": 4.33066333,
+      "process_ms": 1021.448208,
+      "peak_rss_mib": 30.90625
+    },
+    {
+      "kind": "steady",
+      "repeat": 3,
+      "scenario": "usage",
+      "implementation": "python",
+      "render_ms": 4.39073,
+      "pack_ms": 0.12477417,
+      "png_ms": 0.6111354200000001,
+      "render_pack_ms": 4.53853375,
+      "process_ms": 1062.621792,
+      "peak_rss_mib": 30.921875
+    },
+    {
+      "kind": "steady",
+      "repeat": 3,
+      "scenario": "default",
+      "implementation": "go",
+      "pack_ms": 0.0940025,
+      "png_ms": 3.4612725,
+      "render_ms": 3.25476542,
+      "render_pack_ms": 3.36009042,
+      "process_ms": 1095.4165,
+      "peak_rss_mib": 15.0
+    },
+    {
+      "kind": "steady",
+      "repeat": 3,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "pack_ms": 0.09772042,
+      "png_ms": 3.49289,
+      "render_ms": 3.3346245800000003,
+      "render_pack_ms": 3.40175333,
+      "process_ms": 1112.391666,
+      "peak_rss_mib": 14.6875
+    },
+    {
+      "kind": "steady",
+      "repeat": 3,
+      "scenario": "devices",
+      "implementation": "go",
+      "pack_ms": 0.09568292,
+      "png_ms": 3.69115458,
+      "render_ms": 3.37399291,
+      "render_pack_ms": 3.4924820899999998,
+      "process_ms": 1147.650583,
+      "peak_rss_mib": 15.328125
+    },
+    {
+      "kind": "steady",
+      "repeat": 3,
+      "scenario": "music",
+      "implementation": "go",
+      "pack_ms": 0.18820167000000002,
+      "png_ms": 3.51155083,
+      "render_ms": 3.30813167,
+      "render_pack_ms": 3.31212417,
+      "process_ms": 1110.055542,
+      "peak_rss_mib": 15.875
+    },
+    {
+      "kind": "steady",
+      "repeat": 3,
+      "scenario": "usage",
+      "implementation": "go",
+      "pack_ms": 0.09591666,
+      "png_ms": 3.45570292,
+      "render_ms": 3.29126792,
+      "render_pack_ms": 3.4264325,
+      "process_ms": 1105.318167,
+      "peak_rss_mib": 15.171875
+    },
+    {
+      "kind": "steady",
+      "repeat": 4,
+      "scenario": "default",
+      "implementation": "python",
+      "render_ms": 3.8740016600000002,
+      "pack_ms": 0.12399583,
+      "png_ms": 0.61524583,
+      "render_pack_ms": 3.86394292,
+      "process_ms": 939.248209,
+      "peak_rss_mib": 32.296875
+    },
+    {
+      "kind": "steady",
+      "repeat": 4,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "pack_ms": 0.09580334,
+      "png_ms": 3.5240575,
+      "render_ms": 3.39232125,
+      "render_pack_ms": 3.4178941600000003,
+      "process_ms": 1121.788334,
+      "peak_rss_mib": 14.75
+    },
+    {
+      "kind": "steady",
+      "repeat": 4,
+      "scenario": "music",
+      "implementation": "python",
+      "render_ms": 3.60012875,
+      "pack_ms": 0.12586166000000001,
+      "png_ms": 0.635955,
+      "render_pack_ms": 3.72230375,
+      "process_ms": 897.623041,
+      "peak_rss_mib": 31.015625
+    },
+    {
+      "kind": "steady",
+      "repeat": 4,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "render_ms": 4.29580625,
+      "pack_ms": 0.12370959,
+      "png_ms": 0.61277125,
+      "render_pack_ms": 4.33083667,
+      "process_ms": 1031.261,
+      "peak_rss_mib": 31.0
+    },
+    {
+      "kind": "steady",
+      "repeat": 4,
+      "scenario": "devices",
+      "implementation": "python",
+      "render_ms": 4.49829875,
+      "pack_ms": 0.12503375,
+      "png_ms": 0.60762334,
+      "render_pack_ms": 4.67403584,
+      "process_ms": 1098.294167,
+      "peak_rss_mib": 30.890625
+    },
+    {
+      "kind": "steady",
+      "repeat": 4,
+      "scenario": "usage",
+      "implementation": "go",
+      "pack_ms": 0.0966175,
+      "png_ms": 3.69459208,
+      "render_ms": 3.2853695800000002,
+      "render_pack_ms": 3.41010959,
+      "process_ms": 1127.189875,
+      "peak_rss_mib": 14.984375
+    },
+    {
+      "kind": "steady",
+      "repeat": 4,
+      "scenario": "usage",
+      "implementation": "python",
+      "render_ms": 4.4039654100000005,
+      "pack_ms": 0.12312375,
+      "png_ms": 0.6194775,
+      "render_pack_ms": 4.5186,
+      "process_ms": 1067.154041,
+      "peak_rss_mib": 30.9375
+    },
+    {
+      "kind": "steady",
+      "repeat": 4,
+      "scenario": "default",
+      "implementation": "go",
+      "pack_ms": 0.09610666000000001,
+      "png_ms": 3.47392083,
+      "render_ms": 3.28389625,
+      "render_pack_ms": 3.6027229199999997,
+      "process_ms": 1123.762875,
+      "peak_rss_mib": 15.125
+    },
+    {
+      "kind": "steady",
+      "repeat": 4,
+      "scenario": "devices",
+      "implementation": "go",
+      "pack_ms": 0.09595667,
+      "png_ms": 3.7149658399999996,
+      "render_ms": 3.39305542,
+      "render_pack_ms": 3.5045645800000003,
+      "process_ms": 1153.490458,
+      "peak_rss_mib": 15.703125
+    },
+    {
+      "kind": "steady",
+      "repeat": 4,
+      "scenario": "music",
+      "implementation": "go",
+      "pack_ms": 0.09451292,
+      "png_ms": 3.51738208,
+      "render_ms": 3.4055216600000002,
+      "render_pack_ms": 3.29952958,
+      "process_ms": 1110.591583,
+      "peak_rss_mib": 15.0625
+    },
+    {
+      "kind": "startup",
+      "repeat": 0,
+      "scenario": "devices",
+      "implementation": "go",
+      "process_ms": 7.727792,
+      "peak_rss_mib": 8.546875
+    },
+    {
+      "kind": "startup",
+      "repeat": 0,
+      "scenario": "usage",
+      "implementation": "python",
+      "process_ms": 38.475875,
+      "peak_rss_mib": 29.328125
+    },
+    {
+      "kind": "startup",
+      "repeat": 0,
+      "scenario": "music",
+      "implementation": "python",
+      "process_ms": 37.767125,
+      "peak_rss_mib": 29.5
+    },
+    {
+      "kind": "startup",
+      "repeat": 0,
+      "scenario": "music",
+      "implementation": "go",
+      "process_ms": 8.3515,
+      "peak_rss_mib": 10.234375
+    },
+    {
+      "kind": "startup",
+      "repeat": 0,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "process_ms": 37.774875,
+      "peak_rss_mib": 29.359375
+    },
+    {
+      "kind": "startup",
+      "repeat": 0,
+      "scenario": "usage",
+      "implementation": "go",
+      "process_ms": 7.501208,
+      "peak_rss_mib": 8.421875
+    },
+    {
+      "kind": "startup",
+      "repeat": 0,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "process_ms": 7.249167,
+      "peak_rss_mib": 8.296875
+    },
+    {
+      "kind": "startup",
+      "repeat": 0,
+      "scenario": "default",
+      "implementation": "go",
+      "process_ms": 7.136166,
+      "peak_rss_mib": 8.390625
+    },
+    {
+      "kind": "startup",
+      "repeat": 0,
+      "scenario": "devices",
+      "implementation": "python",
+      "process_ms": 44.2045,
+      "peak_rss_mib": 29.328125
+    },
+    {
+      "kind": "startup",
+      "repeat": 0,
+      "scenario": "default",
+      "implementation": "python",
+      "process_ms": 37.590042,
+      "peak_rss_mib": 29.4375
+    },
+    {
+      "kind": "startup",
+      "repeat": 1,
+      "scenario": "music",
+      "implementation": "python",
+      "process_ms": 38.313084,
+      "peak_rss_mib": 29.671875
+    },
+    {
+      "kind": "startup",
+      "repeat": 1,
+      "scenario": "default",
+      "implementation": "go",
+      "process_ms": 7.380459,
+      "peak_rss_mib": 8.546875
+    },
+    {
+      "kind": "startup",
+      "repeat": 1,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "process_ms": 38.015458,
+      "peak_rss_mib": 29.5
+    },
+    {
+      "kind": "startup",
+      "repeat": 1,
+      "scenario": "music",
+      "implementation": "go",
+      "process_ms": 8.185292,
+      "peak_rss_mib": 10.484375
+    },
+    {
+      "kind": "startup",
+      "repeat": 1,
+      "scenario": "devices",
+      "implementation": "python",
+      "process_ms": 43.933,
+      "peak_rss_mib": 29.46875
+    },
+    {
+      "kind": "startup",
+      "repeat": 1,
+      "scenario": "default",
+      "implementation": "python",
+      "process_ms": 37.159167,
+      "peak_rss_mib": 29.359375
+    },
+    {
+      "kind": "startup",
+      "repeat": 1,
+      "scenario": "usage",
+      "implementation": "python",
+      "process_ms": 38.363208,
+      "peak_rss_mib": 29.328125
+    },
+    {
+      "kind": "startup",
+      "repeat": 1,
+      "scenario": "usage",
+      "implementation": "go",
+      "process_ms": 7.787291,
+      "peak_rss_mib": 8.3125
+    },
+    {
+      "kind": "startup",
+      "repeat": 1,
+      "scenario": "devices",
+      "implementation": "go",
+      "process_ms": 7.509584,
+      "peak_rss_mib": 8.53125
+    },
+    {
+      "kind": "startup",
+      "repeat": 1,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "process_ms": 7.20375,
+      "peak_rss_mib": 8.296875
+    },
+    {
+      "kind": "startup",
+      "repeat": 2,
+      "scenario": "usage",
+      "implementation": "python",
+      "process_ms": 39.210709,
+      "peak_rss_mib": 29.5
+    },
+    {
+      "kind": "startup",
+      "repeat": 2,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "process_ms": 38.2125,
+      "peak_rss_mib": 29.34375
+    },
+    {
+      "kind": "startup",
+      "repeat": 2,
+      "scenario": "music",
+      "implementation": "go",
+      "process_ms": 8.14875,
+      "peak_rss_mib": 10.265625
+    },
+    {
+      "kind": "startup",
+      "repeat": 2,
+      "scenario": "devices",
+      "implementation": "go",
+      "process_ms": 7.367958,
+      "peak_rss_mib": 8.375
+    },
+    {
+      "kind": "startup",
+      "repeat": 2,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "process_ms": 7.712584,
+      "peak_rss_mib": 8.46875
+    },
+    {
+      "kind": "startup",
+      "repeat": 2,
+      "scenario": "devices",
+      "implementation": "python",
+      "process_ms": 45.78925,
+      "peak_rss_mib": 29.46875
+    },
+    {
+      "kind": "startup",
+      "repeat": 2,
+      "scenario": "music",
+      "implementation": "python",
+      "process_ms": 37.574958,
+      "peak_rss_mib": 29.515625
+    },
+    {
+      "kind": "startup",
+      "repeat": 2,
+      "scenario": "default",
+      "implementation": "go",
+      "process_ms": 7.486417,
+      "peak_rss_mib": 8.578125
+    },
+    {
+      "kind": "startup",
+      "repeat": 2,
+      "scenario": "usage",
+      "implementation": "go",
+      "process_ms": 7.260875,
+      "peak_rss_mib": 8.3125
+    },
+    {
+      "kind": "startup",
+      "repeat": 2,
+      "scenario": "default",
+      "implementation": "python",
+      "process_ms": 36.500042,
+      "peak_rss_mib": 29.5
+    },
+    {
+      "kind": "startup",
+      "repeat": 3,
+      "scenario": "usage",
+      "implementation": "go",
+      "process_ms": 7.505792,
+      "peak_rss_mib": 8.4375
+    },
+    {
+      "kind": "startup",
+      "repeat": 3,
+      "scenario": "devices",
+      "implementation": "python",
+      "process_ms": 42.403959,
+      "peak_rss_mib": 29.46875
+    },
+    {
+      "kind": "startup",
+      "repeat": 3,
+      "scenario": "music",
+      "implementation": "go",
+      "process_ms": 8.076917,
+      "peak_rss_mib": 10.234375
+    },
+    {
+      "kind": "startup",
+      "repeat": 3,
+      "scenario": "default",
+      "implementation": "python",
+      "process_ms": 36.754834,
+      "peak_rss_mib": 29.328125
+    },
+    {
+      "kind": "startup",
+      "repeat": 3,
+      "scenario": "devices",
+      "implementation": "go",
+      "process_ms": 7.73325,
+      "peak_rss_mib": 8.359375
+    },
+    {
+      "kind": "startup",
+      "repeat": 3,
+      "scenario": "default",
+      "implementation": "go",
+      "process_ms": 6.778125,
+      "peak_rss_mib": 8.4375
+    },
+    {
+      "kind": "startup",
+      "repeat": 3,
+      "scenario": "usage",
+      "implementation": "python",
+      "process_ms": 37.075958,
+      "peak_rss_mib": 29.40625
+    },
+    {
+      "kind": "startup",
+      "repeat": 3,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "process_ms": 7.511875,
+      "peak_rss_mib": 8.328125
+    },
+    {
+      "kind": "startup",
+      "repeat": 3,
+      "scenario": "music",
+      "implementation": "python",
+      "process_ms": 37.322084,
+      "peak_rss_mib": 29.453125
+    },
+    {
+      "kind": "startup",
+      "repeat": 3,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "process_ms": 38.445083,
+      "peak_rss_mib": 29.390625
+    },
+    {
+      "kind": "startup",
+      "repeat": 4,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "process_ms": 40.960375,
+      "peak_rss_mib": 29.40625
+    },
+    {
+      "kind": "startup",
+      "repeat": 4,
+      "scenario": "default",
+      "implementation": "go",
+      "process_ms": 7.735958,
+      "peak_rss_mib": 8.4375
+    },
+    {
+      "kind": "startup",
+      "repeat": 4,
+      "scenario": "default",
+      "implementation": "python",
+      "process_ms": 40.048125,
+      "peak_rss_mib": 29.4375
+    },
+    {
+      "kind": "startup",
+      "repeat": 4,
+      "scenario": "usage",
+      "implementation": "go",
+      "process_ms": 7.581333,
+      "peak_rss_mib": 8.546875
+    },
+    {
+      "kind": "startup",
+      "repeat": 4,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "process_ms": 7.589584,
+      "peak_rss_mib": 8.4375
+    },
+    {
+      "kind": "startup",
+      "repeat": 4,
+      "scenario": "music",
+      "implementation": "go",
+      "process_ms": 7.999042,
+      "peak_rss_mib": 10.34375
+    },
+    {
+      "kind": "startup",
+      "repeat": 4,
+      "scenario": "usage",
+      "implementation": "python",
+      "process_ms": 38.326917,
+      "peak_rss_mib": 29.34375
+    },
+    {
+      "kind": "startup",
+      "repeat": 4,
+      "scenario": "music",
+      "implementation": "python",
+      "process_ms": 37.276708,
+      "peak_rss_mib": 29.421875
+    },
+    {
+      "kind": "startup",
+      "repeat": 4,
+      "scenario": "devices",
+      "implementation": "python",
+      "process_ms": 43.104958,
+      "peak_rss_mib": 29.375
+    },
+    {
+      "kind": "startup",
+      "repeat": 4,
+      "scenario": "devices",
+      "implementation": "go",
+      "process_ms": 7.689791,
+      "peak_rss_mib": 8.390625
+    },
+    {
+      "kind": "startup",
+      "repeat": 5,
+      "scenario": "usage",
+      "implementation": "go",
+      "process_ms": 7.086167,
+      "peak_rss_mib": 8.28125
+    },
+    {
+      "kind": "startup",
+      "repeat": 5,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "process_ms": 7.079209,
+      "peak_rss_mib": 8.28125
+    },
+    {
+      "kind": "startup",
+      "repeat": 5,
+      "scenario": "default",
+      "implementation": "python",
+      "process_ms": 36.84925,
+      "peak_rss_mib": 29.421875
+    },
+    {
+      "kind": "startup",
+      "repeat": 5,
+      "scenario": "music",
+      "implementation": "python",
+      "process_ms": 36.919792,
+      "peak_rss_mib": 29.390625
+    },
+    {
+      "kind": "startup",
+      "repeat": 5,
+      "scenario": "devices",
+      "implementation": "python",
+      "process_ms": 42.524625,
+      "peak_rss_mib": 29.296875
+    },
+    {
+      "kind": "startup",
+      "repeat": 5,
+      "scenario": "default",
+      "implementation": "go",
+      "process_ms": 7.391458,
+      "peak_rss_mib": 8.453125
+    },
+    {
+      "kind": "startup",
+      "repeat": 5,
+      "scenario": "usage",
+      "implementation": "python",
+      "process_ms": 37.45375,
+      "peak_rss_mib": 29.453125
+    },
+    {
+      "kind": "startup",
+      "repeat": 5,
+      "scenario": "music",
+      "implementation": "go",
+      "process_ms": 8.073834,
+      "peak_rss_mib": 10.359375
+    },
+    {
+      "kind": "startup",
+      "repeat": 5,
+      "scenario": "devices",
+      "implementation": "go",
+      "process_ms": 7.074542,
+      "peak_rss_mib": 8.59375
+    },
+    {
+      "kind": "startup",
+      "repeat": 5,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "process_ms": 38.17275,
+      "peak_rss_mib": 29.4375
+    },
+    {
+      "kind": "startup",
+      "repeat": 6,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "process_ms": 38.175292,
+      "peak_rss_mib": 29.53125
+    },
+    {
+      "kind": "startup",
+      "repeat": 6,
+      "scenario": "music",
+      "implementation": "go",
+      "process_ms": 8.510208,
+      "peak_rss_mib": 10.375
+    },
+    {
+      "kind": "startup",
+      "repeat": 6,
+      "scenario": "usage",
+      "implementation": "python",
+      "process_ms": 37.978833,
+      "peak_rss_mib": 29.4375
+    },
+    {
+      "kind": "startup",
+      "repeat": 6,
+      "scenario": "usage",
+      "implementation": "go",
+      "process_ms": 7.614875,
+      "peak_rss_mib": 8.453125
+    },
+    {
+      "kind": "startup",
+      "repeat": 6,
+      "scenario": "devices",
+      "implementation": "go",
+      "process_ms": 7.30125,
+      "peak_rss_mib": 8.375
+    },
+    {
+      "kind": "startup",
+      "repeat": 6,
+      "scenario": "music",
+      "implementation": "python",
+      "process_ms": 37.39225,
+      "peak_rss_mib": 29.484375
+    },
+    {
+      "kind": "startup",
+      "repeat": 6,
+      "scenario": "default",
+      "implementation": "go",
+      "process_ms": 7.695709,
+      "peak_rss_mib": 8.40625
+    },
+    {
+      "kind": "startup",
+      "repeat": 6,
+      "scenario": "devices",
+      "implementation": "python",
+      "process_ms": 43.438042,
+      "peak_rss_mib": 29.453125
+    },
+    {
+      "kind": "startup",
+      "repeat": 6,
+      "scenario": "default",
+      "implementation": "python",
+      "process_ms": 37.178,
+      "peak_rss_mib": 29.390625
+    },
+    {
+      "kind": "startup",
+      "repeat": 6,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "process_ms": 7.45075,
+      "peak_rss_mib": 8.484375
+    },
+    {
+      "kind": "startup",
+      "repeat": 7,
+      "scenario": "music",
+      "implementation": "go",
+      "process_ms": 7.734542,
+      "peak_rss_mib": 10.140625
+    },
+    {
+      "kind": "startup",
+      "repeat": 7,
+      "scenario": "devices",
+      "implementation": "go",
+      "process_ms": 7.1035,
+      "peak_rss_mib": 8.546875
+    },
+    {
+      "kind": "startup",
+      "repeat": 7,
+      "scenario": "devices",
+      "implementation": "python",
+      "process_ms": 43.119208,
+      "peak_rss_mib": 29.421875
+    },
+    {
+      "kind": "startup",
+      "repeat": 7,
+      "scenario": "usage",
+      "implementation": "go",
+      "process_ms": 7.422042,
+      "peak_rss_mib": 8.3125
+    },
+    {
+      "kind": "startup",
+      "repeat": 7,
+      "scenario": "music",
+      "implementation": "python",
+      "process_ms": 36.475333,
+      "peak_rss_mib": 29.515625
+    },
+    {
+      "kind": "startup",
+      "repeat": 7,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "process_ms": 37.116875,
+      "peak_rss_mib": 29.40625
+    },
+    {
+      "kind": "startup",
+      "repeat": 7,
+      "scenario": "usage",
+      "implementation": "python",
+      "process_ms": 37.5965,
+      "peak_rss_mib": 29.390625
+    },
+    {
+      "kind": "startup",
+      "repeat": 7,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "process_ms": 7.246625,
+      "peak_rss_mib": 8.3125
+    },
+    {
+      "kind": "startup",
+      "repeat": 7,
+      "scenario": "default",
+      "implementation": "python",
+      "process_ms": 36.579708,
+      "peak_rss_mib": 29.5625
+    },
+    {
+      "kind": "startup",
+      "repeat": 7,
+      "scenario": "default",
+      "implementation": "go",
+      "process_ms": 7.28025,
+      "peak_rss_mib": 8.609375
+    },
+    {
+      "kind": "startup",
+      "repeat": 8,
+      "scenario": "devices",
+      "implementation": "python",
+      "process_ms": 42.89025,
+      "peak_rss_mib": 29.4375
+    },
+    {
+      "kind": "startup",
+      "repeat": 8,
+      "scenario": "music",
+      "implementation": "go",
+      "process_ms": 7.864083,
+      "peak_rss_mib": 10.109375
+    },
+    {
+      "kind": "startup",
+      "repeat": 8,
+      "scenario": "usage",
+      "implementation": "go",
+      "process_ms": 6.909708,
+      "peak_rss_mib": 8.421875
+    },
+    {
+      "kind": "startup",
+      "repeat": 8,
+      "scenario": "default",
+      "implementation": "go",
+      "process_ms": 7.513625,
+      "peak_rss_mib": 8.59375
+    },
+    {
+      "kind": "startup",
+      "repeat": 8,
+      "scenario": "devices",
+      "implementation": "go",
+      "process_ms": 7.351167,
+      "peak_rss_mib": 8.421875
+    },
+    {
+      "kind": "startup",
+      "repeat": 8,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "process_ms": 38.643375,
+      "peak_rss_mib": 29.546875
+    },
+    {
+      "kind": "startup",
+      "repeat": 8,
+      "scenario": "music",
+      "implementation": "python",
+      "process_ms": 37.529625,
+      "peak_rss_mib": 29.5
+    },
+    {
+      "kind": "startup",
+      "repeat": 8,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "process_ms": 7.662166,
+      "peak_rss_mib": 8.328125
+    },
+    {
+      "kind": "startup",
+      "repeat": 8,
+      "scenario": "default",
+      "implementation": "python",
+      "process_ms": 37.462208,
+      "peak_rss_mib": 29.46875
+    },
+    {
+      "kind": "startup",
+      "repeat": 8,
+      "scenario": "usage",
+      "implementation": "python",
+      "process_ms": 37.609792,
+      "peak_rss_mib": 29.40625
+    },
+    {
+      "kind": "startup",
+      "repeat": 9,
+      "scenario": "antigravity",
+      "implementation": "go",
+      "process_ms": 7.693708,
+      "peak_rss_mib": 8.484375
+    },
+    {
+      "kind": "startup",
+      "repeat": 9,
+      "scenario": "music",
+      "implementation": "python",
+      "process_ms": 36.5765,
+      "peak_rss_mib": 29.453125
+    },
+    {
+      "kind": "startup",
+      "repeat": 9,
+      "scenario": "devices",
+      "implementation": "go",
+      "process_ms": 7.606291,
+      "peak_rss_mib": 8.53125
+    },
+    {
+      "kind": "startup",
+      "repeat": 9,
+      "scenario": "default",
+      "implementation": "python",
+      "process_ms": 36.962917,
+      "peak_rss_mib": 29.578125
+    },
+    {
+      "kind": "startup",
+      "repeat": 9,
+      "scenario": "default",
+      "implementation": "go",
+      "process_ms": 7.341083,
+      "peak_rss_mib": 8.578125
+    },
+    {
+      "kind": "startup",
+      "repeat": 9,
+      "scenario": "devices",
+      "implementation": "python",
+      "process_ms": 43.404917,
+      "peak_rss_mib": 29.359375
+    },
+    {
+      "kind": "startup",
+      "repeat": 9,
+      "scenario": "antigravity",
+      "implementation": "python",
+      "process_ms": 36.940542,
+      "peak_rss_mib": 29.46875
+    },
+    {
+      "kind": "startup",
+      "repeat": 9,
+      "scenario": "usage",
+      "implementation": "python",
+      "process_ms": 37.35925,
+      "peak_rss_mib": 29.328125
+    },
+    {
+      "kind": "startup",
+      "repeat": 9,
+      "scenario": "music",
+      "implementation": "go",
+      "process_ms": 7.910584,
+      "peak_rss_mib": 10.453125
+    },
+    {
+      "kind": "startup",
+      "repeat": 9,
+      "scenario": "usage",
+      "implementation": "go",
+      "process_ms": 6.967375,
+      "peak_rss_mib": 8.28125
+    }
+  ],
+  "summary": {
+    "default": {
+      "go": {
+        "render_ms": {
+          "median": 3.25476542,
+          "min": 3.19199667,
+          "max": 3.28389625
+        },
+        "pack_ms": {
+          "median": 0.09610666000000001,
+          "min": 0.09358292,
+          "max": 0.09815542
+        },
+        "png_ms": {
+          "median": 3.4612725,
+          "min": 3.41430583,
+          "max": 3.48798583
+        },
+        "render_pack_ms": {
+          "median": 3.36009042,
+          "min": 3.28535584,
+          "max": 3.6027229199999997
+        },
+        "peak_rss_mib": {
+          "median": 15.0,
+          "min": 14.78125,
+          "max": 15.71875
+        },
+        "process_ms": {
+          "median": 7.3859585,
+          "min": 6.778125,
+          "max": 7.735958
+        }
+      },
+      "python": {
+        "render_ms": {
+          "median": 3.83167708,
+          "min": 3.71958583,
+          "max": 4.05897167
+        },
+        "pack_ms": {
+          "median": 0.12164875,
+          "min": 0.12120042,
+          "max": 0.1242825
+        },
+        "png_ms": {
+          "median": 0.6120658299999999,
+          "min": 0.5940354200000001,
+          "max": 0.61778958
+        },
+        "render_pack_ms": {
+          "median": 3.8673475,
+          "min": 3.8291725,
+          "max": 3.91639042
+        },
+        "peak_rss_mib": {
+          "median": 30.984375,
+          "min": 30.828125,
+          "max": 32.953125
+        },
+        "process_ms": {
+          "median": 37.061042,
+          "min": 36.500042,
+          "max": 40.048125
+        }
+      }
+    },
+    "devices": {
+      "go": {
+        "render_ms": {
+          "median": 3.3926,
+          "min": 3.34739625,
+          "max": 3.54947917
+        },
+        "pack_ms": {
+          "median": 0.09579791,
+          "min": 0.09532834,
+          "max": 0.09739167
+        },
+        "png_ms": {
+          "median": 3.69115458,
+          "min": 3.64946334,
+          "max": 3.7149658399999996
+        },
+        "render_pack_ms": {
+          "median": 3.45209416,
+          "min": 3.43803958,
+          "max": 3.5045645800000003
+        },
+        "peak_rss_mib": {
+          "median": 15.328125,
+          "min": 14.890625,
+          "max": 15.703125
+        },
+        "process_ms": {
+          "median": 7.438771,
+          "min": 7.074542,
+          "max": 7.73325
+        }
+      },
+      "python": {
+        "render_ms": {
+          "median": 4.49829875,
+          "min": 4.49466375,
+          "max": 4.5753141600000005
+        },
+        "pack_ms": {
+          "median": 0.12163291999999999,
+          "min": 0.11875709,
+          "max": 0.12503375
+        },
+        "png_ms": {
+          "median": 0.6158720799999999,
+          "min": 0.60762334,
+          "max": 0.62803292
+        },
+        "render_pack_ms": {
+          "median": 4.67403584,
+          "min": 4.619565,
+          "max": 4.91709375
+        },
+        "peak_rss_mib": {
+          "median": 31.15625,
+          "min": 30.890625,
+          "max": 32.15625
+        },
+        "process_ms": {
+          "median": 43.2620625,
+          "min": 42.403959,
+          "max": 45.78925
+        }
+      }
+    },
+    "usage": {
+      "go": {
+        "render_ms": {
+          "median": 3.2853695800000002,
+          "min": 3.2626108300000003,
+          "max": 3.30488042
+        },
+        "pack_ms": {
+          "median": 0.09542917,
+          "min": 0.09329458,
+          "max": 0.0966175
+        },
+        "png_ms": {
+          "median": 3.431605,
+          "min": 3.4232033399999997,
+          "max": 3.69459208
+        },
+        "render_pack_ms": {
+          "median": 3.37101291,
+          "min": 3.31953459,
+          "max": 3.4264325
+        },
+        "peak_rss_mib": {
+          "median": 14.984375,
+          "min": 14.796875,
+          "max": 15.765625
+        },
+        "process_ms": {
+          "median": 7.461625,
+          "min": 6.909708,
+          "max": 7.787291
+        }
+      },
+      "python": {
+        "render_ms": {
+          "median": 4.3738570800000005,
+          "min": 4.33927042,
+          "max": 4.4039654100000005
+        },
+        "pack_ms": {
+          "median": 0.12123125,
+          "min": 0.12033875,
+          "max": 0.12477417
+        },
+        "png_ms": {
+          "median": 0.61401958,
+          "min": 0.59790333,
+          "max": 0.6194775
+        },
+        "render_pack_ms": {
+          "median": 4.50767334,
+          "min": 4.48009959,
+          "max": 4.53853375
+        },
+        "peak_rss_mib": {
+          "median": 30.9375,
+          "min": 30.84375,
+          "max": 31.015625
+        },
+        "process_ms": {
+          "median": 37.794312500000004,
+          "min": 37.075958,
+          "max": 39.210709
+        }
+      }
+    },
+    "music": {
+      "go": {
+        "render_ms": {
+          "median": 3.18130583,
+          "min": 3.14592292,
+          "max": 3.4055216600000002
+        },
+        "pack_ms": {
+          "median": 0.09539625,
+          "min": 0.09374333,
+          "max": 0.18820167000000002
+        },
+        "png_ms": {
+          "median": 3.4776729100000003,
+          "min": 3.45914916,
+          "max": 3.51738208
+        },
+        "render_pack_ms": {
+          "median": 3.27406417,
+          "min": 3.2403316699999998,
+          "max": 3.31212417
+        },
+        "peak_rss_mib": {
+          "median": 15.875,
+          "min": 15.0625,
+          "max": 16.5625
+        },
+        "process_ms": {
+          "median": 8.0753755,
+          "min": 7.734542,
+          "max": 8.510208
+        }
+      },
+      "python": {
+        "render_ms": {
+          "median": 3.54297584,
+          "min": 3.53797208,
+          "max": 3.60012875
+        },
+        "pack_ms": {
+          "median": 0.12353875,
+          "min": 0.12018958,
+          "max": 0.12771167
+        },
+        "png_ms": {
+          "median": 0.6270775,
+          "min": 0.61161875,
+          "max": 0.635955
+        },
+        "render_pack_ms": {
+          "median": 3.72203417,
+          "min": 3.68272292,
+          "max": 3.7322075
+        },
+        "peak_rss_mib": {
+          "median": 31.03125,
+          "min": 30.890625,
+          "max": 31.171875
+        },
+        "process_ms": {
+          "median": 37.357167,
+          "min": 36.475333,
+          "max": 38.313084
+        }
+      }
+    },
+    "antigravity": {
+      "go": {
+        "render_ms": {
+          "median": 3.3346245800000003,
+          "min": 3.25382875,
+          "max": 3.39232125
+        },
+        "pack_ms": {
+          "median": 0.09725792,
+          "min": 0.09435625,
+          "max": 0.10954959
+        },
+        "png_ms": {
+          "median": 3.49289,
+          "min": 3.4400525,
+          "max": 3.60149125
+        },
+        "render_pack_ms": {
+          "median": 3.4147266600000004,
+          "min": 3.35289417,
+          "max": 3.6929275
+        },
+        "peak_rss_mib": {
+          "median": 15.375,
+          "min": 14.6875,
+          "max": 15.671875
+        },
+        "process_ms": {
+          "median": 7.4813125,
+          "min": 7.079209,
+          "max": 7.712584
+        }
+      },
+      "python": {
+        "render_ms": {
+          "median": 4.18995917,
+          "min": 4.16208792,
+          "max": 4.29580625
+        },
+        "pack_ms": {
+          "median": 0.12129792,
+          "min": 0.12070958999999999,
+          "max": 0.12370959
+        },
+        "png_ms": {
+          "median": 0.61277125,
+          "min": 0.61204375,
+          "max": 0.62384167
+        },
+        "render_pack_ms": {
+          "median": 4.30999458,
+          "min": 4.29187292,
+          "max": 4.33083667
+        },
+        "peak_rss_mib": {
+          "median": 30.9375,
+          "min": 30.75,
+          "max": 31.0
+        },
+        "process_ms": {
+          "median": 38.174020999999996,
+          "min": 36.940542,
+          "max": 40.960375
+        }
+      }
+    }
+  }
+}
