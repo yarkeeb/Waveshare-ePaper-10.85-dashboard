@@ -15,5 +15,10 @@ jobs:
           cache: true
       - run: go test -race ./...
       - run: go vet ./...
-      - run: make pi-zero pi-zero2
+      - run: make package
       - run: go run ./cmd/dashboard -demo -once -output /tmp/dashboard.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-deployment-packages
+          path: dist/
+          if-no-files-found: error

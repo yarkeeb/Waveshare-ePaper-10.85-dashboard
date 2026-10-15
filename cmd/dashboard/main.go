@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/yarkeeb/Waveshare-ePaper-10.85-dashboard/internal/config"
@@ -12,6 +13,7 @@ import (
 	"github.com/yarkeeb/Waveshare-ePaper-10.85-dashboard/internal/providers"
 	"github.com/yarkeeb/Waveshare-ePaper-10.85-dashboard/internal/render"
 	"image/png"
+	"io"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -22,26 +24,47 @@ import (
 )
 
 func main() {
-	if e := run(); e != nil {
+	if e := run(os.Args[1:], os.Stdin, os.Stdout); e != nil {
 		slog.Error("dashboard stopped", "error", e)
 		os.Exit(1)
 	}
 }
-func run() error {
-	cfgPath := flag.String("config", "", "JSON configuration path (defaults if omitted)")
-	output := flag.String("output", "dashboard.png", "PNG output path; empty disables PNG")
-	hardware := flag.Bool("display", false, "use physical Waveshare 10.85 display (Linux)")
-	once := flag.Bool("once", false, "fetch and render one frame")
-	demo := flag.Bool("demo", false, "use offline example data")
-	auth := flag.String("auth", "", "authorize strava, gmail, claude, antigravity or roborock")
-	printConfig := flag.Bool("print-config", false, "print default JSON configuration")
-	flag.Parse()
+func run(args []string, in io.Reader, out io.Writer) error {
+	flags := flag.NewFlagSet("dashboard", flag.ContinueOnError)
+	flags.SetOutput(out)
+	cfgPath := flags.String("config", "", "JSON configuration path (defaults if omitted)")
+	output := flags.String("output", "dashboard.png", "PNG output path; empty disables PNG")
+	hardware := flags.Bool("display", false, "use physical Waveshare 10.85 display (Linux)")
+	once := flags.Bool("once", false, "fetch and render one frame")
+	demo := flags.Bool("demo", false, "use offline example data")
+	auth := flags.String("auth", "", "authorize strava, gmail, claude, antigravity or roborock")
+	printConfig := flags.Bool("print-config", false, "print default JSON configuration")
+	check := flags.Bool("check", false, "check enabled providers and print JSON status without touching the display")
+	migrate := flags.String("migrate-from", "", "import credential JSON files from an existing installation without overwriting")
+	if e := flags.Parse(args); e != nil {
+		if errors.Is(e, flag.ErrHelp) {
+			return nil
+		}
+		return e
+	}
+	if flags.NArg() != 0 {
+		return fmt.Errorf("unexpected positional arguments")
+	}
+	actions := 0
+	for _, enabled := range []bool{*check, *auth != "", *migrate != "", *printConfig} {
+		if enabled {
+			actions++
+		}
+	}
+	if actions > 1 || (actions > 0 && (*demo || *hardware || *once)) {
+		return fmt.Errorf("choose one of -check, -auth, -migrate-from, -print-config, or rendering flags")
+	}
 	if *printConfig {
 		b, e := json.MarshalIndent(config.Default(), "", "  ")
 		if e != nil {
 			return e
 		}
-		fmt.Println(string(b))
+		fmt.Fprintln(out, string(b))
 		return nil
 	}
 	cfg, e := config.Load(*cfgPath)
@@ -52,11 +75,25 @@ func run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	client := providers.NewClient()
+	if *migrate != "" {
+		names, e := providers.MigrateCredentials(*migrate, cfg.StateDir)
+		if e != nil {
+			return e
+		}
+		for _, name := range names {
+			fmt.Fprintln(out, "Imported", name)
+		}
+		fmt.Fprintln(out, "Roborock pickle sessions are not imported; use -auth roborock if needed.")
+		return nil
+	}
+	if *check {
+		return providers.Check(ctx, providers.Jobs(cfg, client), out)
+	}
 	if *auth != "" {
 		if *auth == "roborock" {
-			return client.RoborockAuth(ctx, cfg, os.Stdin, os.Stdout)
+			return client.RoborockAuth(ctx, cfg, in, out)
 		}
-		return client.Auth(ctx, cfg.StateDir, *auth, os.Stdin, os.Stdout)
+		return client.Auth(ctx, cfg.StateDir, *auth, in, out)
 	}
 	if !*hardware && *output == "" {
 		return fmt.Errorf("enable -display or provide -output")

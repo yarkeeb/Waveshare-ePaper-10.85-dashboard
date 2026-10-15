@@ -1,3 +1,5 @@
+> Historical documentation for the [original Python implementation](https://github.com/yarkeeb/Waveshare-ePaper-10.85-dashboard/tree/ceced5eb8a0c17c58d73064a687f924bc3e3b461). These scripts were replaced by Go; use the main README for current setup.
+
 # Waveshare-ePaper-10.85 Dashboard
 
 A fully functional E-ink dashboard running on a Raspberry Pi Zero 1W or 2W. Designed for large Waveshare e-Paper displays (e.g., 10.85"), this project aggregates essential daily information and smart home status into a clean, minimalist interface.

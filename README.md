@@ -59,13 +59,46 @@ Credentials are atomically replaced with mode `0600` when refreshed. Token files
 
 Bambu printers commonly use a self-signed LAN certificate. Set `bambu.insecure_tls: true` to accept that certificate, as the original Python client did. It is off by default; the setting applies only to the Bambu MQTT connection.
 
+A stalled Bambu telemetry stream forces a reconnect and a fresh full snapshot; values from an old connection are never reused as current data. HTTP providers honor server `Retry-After` delays in addition to exponential backoff.
+
 Roborock supports the same V1 vacuum family used by the original dashboard (`v1_properties`). A01/B01 devices and Mi Home authentication are not supported. Use the device ID printed by `-auth roborock` if you have multiple vacuums. Re-run authentication to rediscover devices or replace an expired/revoked cloud session.
+
+## Diagnostics, migration, and deployment archives
+
+Check enabled integrations without opening SPI/GPIO or writing a preview:
+
+```sh
+./bin/dashboard -config dashboard.json -check
+```
+
+The command prints sorted JSON status metadata, without account contents, and exits nonzero if any provider fails. A failed optional integration does not stop a normal dashboard render. The `system` check reports unavailable on macOS/Windows. The original fallback priorities determine which system/crypto/internet probes run.
+
+Import existing credentials without executing Python or replacing destination files:
+
+```sh
+./bin/dashboard -config dashboard.json -migrate-from /path/to/old-dashboard
+```
+
+Only recognized, valid JSON files are imported. Files are validated before copying, stored with owner-only permissions, and the source is unchanged. Pickle sessions are skipped; authenticate Roborock again. Populate widget settings in `dashboard.json` manually—the migration does not execute or parse Python configuration.
+
+`make package` creates `dist/dashboard-linux-armv6.tar.gz`, `dist/dashboard-linux-arm64.tar.gz`, and `dist/SHA256SUMS`. Each archive includes the executable, configuration examples, systemd unit, documentation, and third-party notices. CI uploads these as the **linux-deployment-packages** artifact on each successful run; a Go installation is unnecessary on the Pi.
+
+```sh
+# Download an archive and SHA256SUMS, then verify the downloaded archive:
+shasum -a 256 dashboard-linux-armv6.tar.gz  # compare with SHA256SUMS
+mkdir dashboard-release
+tar -xzf dashboard-linux-armv6.tar.gz -C dashboard-release
+cd dashboard-release
+./dashboard -demo -once -output preview.png
+```
+
+Use [`examples/systemd.json`](examples/systemd.json) as the service configuration starting point; it sets the state directory expected by the bundled unit. Stop a running dashboard before migrating credentials or performing a fresh login.
 
 ## Raspberry Pi
 
 Enable SPI using `raspi-config`. Both SPI chip selects are required: `/dev/spidev0.0` and `/dev/spidev0.1`. The service user needs access to the `spi` and `gpio` groups.
 
-Default BCM GPIO lines: reset 17, data/command 25, busy 24, power 18. Chip selects use the SPI devices (CE0 / CE1). `gpio_chip` defaults to `gpiochip0`; set it to the controller exposing those BCM lines on your board. All paths and control-line offsets are configurable. Orange Pi requires its own GPIO offsets and SPI paths; Raspberry Pi values must not be assumed to apply.
+Default BCM GPIO lines: reset 17, data/command 25, busy 24, power 18. Chip selects use the SPI devices (CE0 / CE1). `gpio_chip` defaults to `gpiochip0`; set it to the controller exposing those BCM lines on your board. All paths and control-line offsets are configurable. [`examples/orange-pi-zero2w.json`](examples/orange-pi-zero2w.json) carries over the upstream Orange Pi Zero 2W pin mapping and SPI bus. These values depend on the board/kernel; confirm GPIO controller numbering before use on a different installation.
 
 Cross-compile on a development computer:
 
@@ -101,6 +134,8 @@ journalctl -u dashboard -f
 
 Use the ARM64 binary in the install command if the Pi runs a 64-bit OS. Group names and GPIO chip selection depend on the installed distribution.
 
+When installing from an extracted deployment archive, use `dashboard` in place of `bin/dashboard-linux-armv6` in the install command above.
+
 ## Development and verification
 
 ```sh
@@ -109,12 +144,13 @@ make build
 make preview
 make pi-zero
 make pi-zero2
+make package       # Linux ARMv6/ARM64 archives and SHA256SUMS in dist/
 ```
 
-Tests cover OAuth refresh/rotation and state validation, provider parsing, timezone boundaries, concurrent snapshots, malformed Roborock frames, monochrome rendering, all bundled icon formats, controller buffer splitting, and old/new RAM updates. CI runs the tests and cross-builds.
+Tests cover complete simulated OAuth/OTP login flows, refresh/rotation, response-format compatibility, credential migration, cancellation, concurrent snapshots, malformed Roborock frames, rendering, and display old/new RAM updates. Local TLS MQTT brokers exercise real client connections, printer reconnects, encrypted vacuum RPC correlation, and cleaning-history persistence. CI runs the tests and produces deployment archives.
 
-The implementation has been tested using mocked APIs, an emulated display bus, and offline previews. **Physical panel, printer/vacuum, and authenticated account verification are still required.** Private Claude/Codex/Antigravity endpoints and device firmware behavior may change. This is a reviewable rewrite, not a claim of hardware-certified parity.
+The implementation has been tested using mocked account APIs, local TLS/MQTT simulators, an emulated display bus, and offline previews. Live smoke checks passed for public weather, AQI, cryptocurrency, and internet connectivity. Linux system metrics require `/proc` and are unavailable on macOS. **Physical panel, printer/vacuum, and authenticated account verification are still required.** Private Claude/Codex/Antigravity endpoints and device firmware behavior may change. This is a reviewable rewrite, not a claim of hardware-certified parity.
 
-Code is organized under `cmd/dashboard`, `internal/config`, `internal/model`, `internal/providers`, `internal/render`, and `internal/display`. The original Python files remain for reference and rollback; their original setup instructions are in [`docs/python-reference.md`](docs/python-reference.md). They are not invoked by the Go application.
+Code is organized under `cmd/dashboard`, `internal/config`, `internal/model`, `internal/providers`, `internal/render`, and `internal/display`. The Python runtime, bundled shared libraries, and duplicate font files have been removed. The complete original implementation remains at [the pre-rewrite commit](https://github.com/yarkeeb/Waveshare-ePaper-10.85-dashboard/tree/ceced5eb8a0c17c58d73064a687f924bc3e3b461), with its historical setup instructions in [`docs/python-reference.md`](docs/python-reference.md).
 
 See [`NOTICE.md`](NOTICE.md) for source attribution and third-party notices.

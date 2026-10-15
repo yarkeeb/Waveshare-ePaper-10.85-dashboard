@@ -23,6 +23,7 @@ import (
 	"hash/crc32"
 	"io"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -215,7 +216,7 @@ func (c *Client) Roborock(ctx context.Context, cfg config.Config) (any, error) {
 	}
 	var d rrDevice
 	for _, v := range s.Devices {
-		if cfg.Roborock.DeviceID == "" || cfg.Roborock.DeviceID == v.DUID {
+		if (cfg.Roborock.DeviceID == "" && (v.PV == "" || v.PV == "1.0")) || cfg.Roborock.DeviceID == v.DUID {
 			d = v
 			break
 		}
@@ -232,7 +233,7 @@ func (c *Client) Roborock(ctx context.Context, cfg config.Config) (any, error) {
 	}
 	user := md5Hex(s.IOT.U + ":" + s.IOT.K)[2:10]
 	password := md5Hex(s.IOT.S + ":" + s.IOT.K)[16:]
-	client := mqtt.NewClient(mqttOptions(u.String(), user, password))
+	client := c.mqtt(mqttOptions(u.String(), user, password))
 	defer client.Disconnect(100)
 	if e = mqttWait(ctx, client.Connect()); e != nil {
 		return nil, e
@@ -240,8 +241,11 @@ func (c *Client) Roborock(ctx context.Context, cfg config.Config) (any, error) {
 	responses := make(chan []byte, 4)
 	topic := s.IOT.U + "/" + user + "/" + d.DUID
 	if e = mqttWait(ctx, client.Subscribe("rr/m/o/"+topic, 0, func(_ mqtt.Client, m mqtt.Message) {
-		b, e := rrDecode(d.LocalKey, m.Payload())
-		if e == nil {
+		frames, e := rrDecodeFrames(d.LocalKey, m.Payload())
+		if e != nil {
+			return
+		}
+		for _, b := range frames {
 			select {
 			case responses <- b:
 			default:
@@ -291,6 +295,9 @@ func (c *Client) Roborock(ctx context.Context, cfg config.Config) (any, error) {
 			if json.Unmarshal([]byte(text), &response) != nil || response.ID != id {
 				continue
 			}
+			if len(response.Error) > 0 && string(response.Error) != "null" {
+				return nil, errors.New("Roborock rejected status request")
+			}
 			if len(response.Result) == 0 {
 				return nil, errors.New("Roborock status unavailable")
 			}
@@ -306,7 +313,9 @@ func (c *Client) Roborock(ctx context.Context, cfg config.Config) (any, error) {
 				Last      string  `json:"last_date"`
 			}
 			path := filepath.Join(cfg.StateDir, "roborock_stats.json")
-			_ = readJSON(path, &old)
+			if e := readJSON(path, &old); e != nil && !errors.Is(e, os.ErrNotExist) {
+				return nil, fmt.Errorf("read cleaning history: %w", e)
+			}
 			if !v.Cleaning && v.Area > 0 && v.Area != old.Reference {
 				old.Reference = v.Area
 				loc, _ := time.LoadLocation(cfg.Timezone)
@@ -323,4 +332,38 @@ func (c *Client) Roborock(ctx context.Context, cfg config.Config) (any, error) {
 			return v, nil
 		}
 	}
+}
+
+// MQTT payloads may contain multiple frames, optionally with length prefixes.
+func rrDecodeFrames(key string, data []byte) ([][]byte, error) {
+	var result [][]byte
+	for len(data) > 0 {
+		if len(data) >= 7 && string(data[4:7]) == "1.0" {
+			size := int(binary.BigEndian.Uint32(data[:4]))
+			if size < 23 || size > len(data)-4 {
+				return nil, errors.New("invalid Roborock frame prefix")
+			}
+			frame, e := rrDecode(key, data[4:4+size])
+			if e != nil {
+				return nil, e
+			}
+			result = append(result, frame)
+			data = data[4+size:]
+			continue
+		}
+		if len(data) < 19 {
+			return nil, errors.New("truncated Roborock message")
+		}
+		size := 19 + int(binary.BigEndian.Uint16(data[17:19])) + 4
+		if size > len(data) {
+			return nil, errors.New("truncated Roborock frame")
+		}
+		frame, e := rrDecode(key, data[:size])
+		if e != nil {
+			return nil, e
+		}
+		result = append(result, frame)
+		data = data[size:]
+	}
+	return result, nil
 }

@@ -208,7 +208,7 @@ func (c *Client) image(ctx context.Context, endpoint string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return nil, HTTPError{resp.StatusCode}
+		return nil, HTTPError{Status: resp.StatusCode}
 	}
 	return readLimited(resp.Body, 2<<20)
 }

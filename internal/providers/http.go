@@ -6,22 +6,42 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
-type Client struct{ HTTP *http.Client }
+type Client struct {
+	HTTP    *http.Client
+	newMQTT func(*mqtt.ClientOptions) mqtt.Client
+}
+
+func (c *Client) mqtt(opts *mqtt.ClientOptions) mqtt.Client {
+	if c.newMQTT != nil {
+		return c.newMQTT(opts)
+	}
+	return mqtt.NewClient(opts)
+}
 
 func NewClient() *Client { return &Client{HTTP: &http.Client{Timeout: 20 * time.Second}} }
 
-type HTTPError struct{ Status int }
+type HTTPError struct {
+	Status     int
+	RetryAfter time.Duration
+}
 
 func (e HTTPError) Error() string { return fmt.Sprintf("HTTP %d", e.Status) }
 func (c *Client) Do(ctx context.Context, method, endpoint string, headers map[string]string, body any, out any) error {
+	copied := make(map[string]string, len(headers))
+	for k, v := range headers {
+		copied[k] = v
+	}
+	headers = copied
 	var reader io.Reader
 	if body != nil {
 		if form, ok := body.(url.Values); ok {
@@ -56,7 +76,7 @@ func (c *Client) Do(ctx context.Context, method, endpoint string, headers map[st
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return HTTPError{resp.StatusCode}
+		return HTTPError{Status: resp.StatusCode, RetryAfter: retryAfter(resp.Header.Get("Retry-After"), time.Now())}
 	}
 	b, e := io.ReadAll(io.LimitReader(resp.Body, 8<<20+1))
 	if e != nil {
@@ -117,4 +137,14 @@ func AtomicWrite(path string, b []byte, mode os.FileMode) error {
 		return e
 	}
 	return os.Rename(f.Name(), path)
+}
+
+func retryAfter(value string, now time.Time) time.Duration {
+	if n, e := strconv.ParseInt(value, 10, 64); e == nil && n > 0 {
+		return time.Duration(min(n, 172800)) * time.Second
+	}
+	if t, e := http.ParseTime(value); e == nil && t.After(now) {
+		return min(t.Sub(now), 48*time.Hour)
+	}
+	return 0
 }
