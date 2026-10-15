@@ -85,23 +85,19 @@ func jwtClaims(token string) map[string]any {
 	return m
 }
 func expiry(t map[string]any) time.Time {
-	if v := number(t["expiresAt"]); v > 0 {
-		return time.UnixMilli(int64(v))
-	}
-	if v := number(t["expires_at"]); v > 0 {
-		return time.Unix(int64(v), 0)
-	}
-	if s := str(t, "expiry"); s != "" {
-		v, _ := time.Parse(time.RFC3339, s)
-		if v.IsZero() {
-			v, _ = time.Parse("2006-01-02T15:04:05.999999", s)
+	for _, key := range []string{"expiresAt", "expires_at", "expiry"} {
+		if v, ok := t[key]; ok {
+			if key == "expiresAt" {
+				if n, ok := finiteNumber(v); ok {
+					return time.UnixMilli(int64(n))
+				}
+			}
+			if parsed := timestamp(v); !parsed.IsZero() {
+				return parsed
+			}
 		}
-		return v
 	}
-	if v := number(jwtClaims(str(t, "access_token", "accessToken", "token"))["exp"]); v > 0 {
-		return time.Unix(int64(v), 0)
-	}
-	return time.Time{}
+	return timestamp(jwtClaims(str(t, "access_token", "accessToken", "token"))["exp"])
 }
 func (c *Client) access(ctx context.Context, dir, provider string, force bool) (string, map[string]any, error) {
 	s := spec(provider)
@@ -182,6 +178,16 @@ func mergeTokens(t, raw map[string]any, provider string) {
 		seconds = 3600
 	}
 	exp := time.Now().Add(time.Duration(seconds) * time.Second)
+	// Keep all imported expiry aliases consistent so an old alias cannot win.
+	if _, ok := t["expiresAt"]; ok {
+		t["expiresAt"] = exp.UnixMilli()
+	}
+	if _, ok := t["expires_at"]; ok {
+		t["expires_at"] = exp.Unix()
+	}
+	if _, ok := t["expiry"]; ok {
+		t["expiry"] = exp.UTC().Format(time.RFC3339)
+	}
 	if provider == "claude" {
 		t["expiresAt"] = exp.UnixMilli()
 	} else if provider == "gmail" {
@@ -318,7 +324,13 @@ func (c *Client) authorized(ctx context.Context, dir, provider, method, endpoint
 			t := tokenObject(root)
 			id := str(t, "account_id", "accountId")
 			if id == "" {
+				id = str(root, "account_id", "accountId")
+			}
+			if id == "" {
 				id = str(object(jwtClaims(token)["https://api.openai.com/auth"]), "chatgpt_account_id", "account_id")
+			}
+			if id == "" {
+				id = str(object(jwtClaims(str(t, "id_token"))["https://api.openai.com/auth"]), "chatgpt_account_id", "account_id")
 			}
 			if id != "" {
 				headers["ChatGPT-Account-Id"] = id

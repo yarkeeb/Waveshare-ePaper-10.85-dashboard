@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -73,12 +74,23 @@ func Load(path string) (Config, error) {
 		}
 		defer f.Close()
 		d := json.NewDecoder(f)
-		d.DisallowUnknownFields()
-		if e = d.Decode(&c); e != nil {
+		var raw json.RawMessage
+		if e = d.Decode(&raw); e != nil {
+			return c, e
+		}
+		if b := bytes.TrimSpace(raw); len(b) == 0 || b[0] != '{' {
+			return c, errors.New("config must be a JSON object")
+		}
+		body := json.NewDecoder(bytes.NewReader(raw))
+		body.DisallowUnknownFields()
+		if e = body.Decode(&c); e != nil {
 			return c, e
 		}
 		if e = d.Decode(new(any)); e != io.EOF {
 			return c, errors.New("config must contain one JSON object")
+		}
+		if c.StateDir == "" {
+			return c, errors.New("state_dir is required")
 		}
 		if !filepath.IsAbs(c.StateDir) {
 			c.StateDir = filepath.Join(filepath.Dir(path), c.StateDir)
@@ -87,8 +99,8 @@ func Load(path string) (Config, error) {
 	if c.Latitude < -90 || c.Latitude > 90 || c.Longitude < -180 || c.Longitude > 180 {
 		return c, errors.New("invalid coordinates")
 	}
-	if c.RefreshSeconds < 5 || c.FullRefreshEvery < 1 {
-		return c, errors.New("refresh_seconds must be >=5 and full_refresh_every >=1")
+	if c.RefreshSeconds < 5 || c.RefreshSeconds > 86400 || c.FullRefreshEvery < 1 {
+		return c, errors.New("refresh_seconds must be 5..86400 and full_refresh_every >=1")
 	}
 	if _, e := time.LoadLocation(c.Timezone); e != nil {
 		return c, fmt.Errorf("timezone: %w", e)
@@ -104,6 +116,16 @@ func Load(path string) (Config, error) {
 	}
 	if c.Roborock.Enabled && c.Roborock.Email == "" {
 		return c, errors.New("Roborock requires email")
+	}
+	if c.Panel.GPIOChip == "" || c.Panel.SPIMaster == "" || c.Panel.SPISlave == "" || c.Panel.SPIMaster == c.Panel.SPISlave {
+		return c, errors.New("panel requires a GPIO chip and distinct SPI device paths")
+	}
+	seen := map[int]bool{}
+	for _, pin := range []int{c.Panel.Reset, c.Panel.DC, c.Panel.Busy, c.Panel.Power} {
+		if pin < 0 || seen[pin] {
+			return c, errors.New("panel GPIO offsets must be distinct and nonnegative")
+		}
+		seen[pin] = true
 	}
 	return c, nil
 }

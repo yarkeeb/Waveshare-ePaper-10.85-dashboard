@@ -99,46 +99,6 @@ func (c *Client) Codex(ctx context.Context, dir string) (any, error) {
 	}
 	return normalizeCodex(r)
 }
-func normalizeCodex(r map[string]any) (model.Usage, error) {
-	if _, ok := r["seven_day"]; ok {
-		return namedUsage(r)
-	}
-	limits := object(r["rate_limit"])
-	if len(limits) == 0 {
-		limits = object(r["rate_limits"])
-	}
-	u := model.Usage{}
-	for _, key := range []string{"primary_window", "secondary_window"} {
-		w := object(limits[key])
-		p, ok := w["used_percent"]
-		if !ok || !validUsage(p) {
-			continue
-		}
-		seconds := number(w["limit_window_seconds"])
-		name := key
-		if seconds == 18000 {
-			name = "5 hours"
-		} else if seconds == 604800 {
-			name = "7 days"
-		} else if seconds > 0 {
-			name = fmt.Sprintf("%.0f hours", seconds/3600)
-		}
-		reset := time.Time{}
-		if ts := number(w["reset_at"]); ts > 0 {
-			if ts > 1e12 {
-				ts /= 1000
-			}
-			reset = time.Unix(int64(ts), 0)
-		} else if seconds, ok := w["reset_after_seconds"]; ok {
-			reset = time.Now().Add(time.Duration(number(seconds)) * time.Second)
-		}
-		u.Windows = append(u.Windows, model.Window{Name: name, Used: clamp(number(p)), Reset: reset})
-	}
-	if len(u.Windows) == 0 {
-		return u, errors.New("unrecognized Codex usage response")
-	}
-	return u, nil
-}
 func (c *Client) Antigravity(ctx context.Context, dir string) (any, error) {
 	var assist map[string]any
 	extra := map[string]string{"User-Agent": "antigravity"}

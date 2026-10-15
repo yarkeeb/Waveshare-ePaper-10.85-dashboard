@@ -1,0 +1,12 @@
+{
+  "state_dir": "/var/lib/epaper-dashboard",
+  "panel": {
+    "gpio_chip": "gpiochip1",
+    "spi_master": "/dev/spidev1.0",
+    "spi_slave": "/dev/spidev1.1",
+    "reset": 226,
+    "dc": 262,
+    "busy": 228,
+    "power": 257
+  }
+}

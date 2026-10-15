@@ -2,6 +2,7 @@ package providers
 
 import (
 	"context"
+	"errors"
 	"github.com/yarkeeb/Waveshare-ePaper-10.85-dashboard/internal/config"
 	"github.com/yarkeeb/Waveshare-ePaper-10.85-dashboard/internal/model"
 	"log/slog"
@@ -17,7 +18,13 @@ type Job struct {
 }
 
 func Jobs(cfg config.Config, c *Client) []Job {
-	jobs := []Job{{Name: "system", Interval: 30 * time.Second, Poll: SystemPoll()}, {Name: "ping", Interval: 20 * time.Second, Poll: PingPoll()}}
+	jobs := []Job{}
+	if !cfg.Strava {
+		jobs = append(jobs, Job{Name: "system", Interval: 30 * time.Second, Poll: SystemPoll()})
+	}
+	if !cfg.Roborock.Enabled && !cfg.Antigravity && !cfg.Codex {
+		jobs = append(jobs, Job{Name: "ping", Interval: 20 * time.Second, Poll: PingPoll()})
+	}
 	loc, _ := time.LoadLocation(cfg.Timezone)
 	add := func(enabled bool, name string, seconds int, poll func(context.Context) (any, error)) {
 		if enabled {
@@ -40,7 +47,7 @@ func Jobs(cfg config.Config, c *Client) []Job {
 	}
 	return jobs
 }
-func poll(ctx context.Context, s *model.Store, j Job) bool {
+func poll(ctx context.Context, s *model.Store, j Job) error {
 	timeout := 30 * time.Second
 	if j.Name == "strava" {
 		timeout = 5 * time.Minute
@@ -52,7 +59,7 @@ func poll(ctx context.Context, s *model.Store, j Job) bool {
 	if e != nil && ctx.Err() != context.Canceled {
 		slog.Warn("widget update failed", "widget", j.Name, "error", e)
 	}
-	return e == nil
+	return e
 }
 func Once(ctx context.Context, s *model.Store, jobs []Job) {
 	var wg sync.WaitGroup
@@ -75,11 +82,11 @@ func Start(ctx context.Context, s *model.Store, jobs []Job) func() {
 			}
 			delay := j.Interval
 			for {
-				ok := poll(ctx, s, j)
-				if ok {
+				err := poll(ctx, s, j)
+				if err == nil {
 					delay = j.Interval
 				} else {
-					delay = min(max(delay*2, 30*time.Second), 30*time.Minute)
+					delay = nextDelay(delay, err)
 				}
 				timer := time.NewTimer(delay)
 				select {
@@ -112,4 +119,13 @@ func Demo(s *model.Store, now time.Time) {
 		put(k, model.Usage{Windows: []model.Window{{Name: "5 hours", Used: 32, Reset: now.Add(2 * time.Hour)}, {Name: "7 days", Used: 58, Reset: now.Add(3 * 24 * time.Hour)}}})
 	}
 	put("spotify", model.Music{Playing: true, Artist: "Demo artist", Track: "A quiet morning"})
+}
+
+func nextDelay(previous time.Duration, err error) time.Duration {
+	delay := min(max(previous*2, 30*time.Second), 30*time.Minute)
+	var status HTTPError
+	if errors.As(err, &status) {
+		delay = max(delay, status.RetryAfter)
+	}
+	return delay
 }
