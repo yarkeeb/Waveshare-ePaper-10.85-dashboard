@@ -127,6 +127,21 @@ func Pack(img image.Image) ([]byte, error) {
 		return nil, errors.New("panel image must be 1360x480")
 	}
 	b := make([]byte, Width*Height/8)
+	if gray, ok := img.(*image.Gray); ok {
+		// Gray.RGBA expands each byte by 257, so the generic luminance
+		// threshold is exactly its high bit. Pack eight pixels at once,
+		// avoiding interface calls and repeated writes to the same byte.
+		for y := 0; y < Height; y++ {
+			row := gray.Pix[y*gray.Stride : y*gray.Stride+Width]
+			dst := b[y*(Width/8) : (y+1)*(Width/8)]
+			for x := range dst {
+				p := row[x*8 : x*8+8]
+				dst[x] = p[0]&0x80 | (p[1]>>1)&0x40 | (p[2]>>2)&0x20 | (p[3]>>3)&0x10 |
+					(p[4]>>4)&0x08 | (p[5]>>5)&0x04 | (p[6]>>6)&0x02 | p[7]>>7
+			}
+		}
+		return b, nil
+	}
 	min := img.Bounds().Min
 	for y := 0; y < Height; y++ {
 		for x := 0; x < Width; x++ {
