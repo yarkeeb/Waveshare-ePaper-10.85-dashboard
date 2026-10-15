@@ -1,0 +1,20 @@
+# Runtime credentials, local configuration, logs and output
+/state/
+/dashboard.json
+/auth.json
+/token.json
+/*_token.json
+/*_creds.json
+/roborock_session.*
+/roborock_stats.json
+/usage.json
+/codex_usage.json
+/limits.json
+*.log
+*.log.*
+/dashboard.png
+/dashboard
+/bin/
+__pycache__/
+.venv/
+.DS_Store

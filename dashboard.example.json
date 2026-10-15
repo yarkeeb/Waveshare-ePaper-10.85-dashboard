@@ -1,0 +1,42 @@
+{
+  "latitude": 44.8140857,
+  "longitude": 20.3934271,
+  "timezone": "Europe/Belgrade",
+  "state_dir": "state",
+  "refresh_seconds": 60,
+  "full_refresh_every": 600,
+  "weather": true,
+  "crypto": true,
+  "gmail": false,
+  "strava": false,
+  "claude": false,
+  "codex": false,
+  "antigravity": false,
+  "spotify": {
+    "enabled": false,
+    "api_key": "",
+    "username": ""
+  },
+  "bambu": {
+    "enabled": false,
+    "host": "",
+    "serial": "",
+    "access_code": "",
+    "insecure_tls": false
+  },
+  "roborock": {
+    "enabled": false,
+    "email": "",
+    "device_id": ""
+  },
+  "panel": {
+    "gpio_chip": "gpiochip0",
+    "spi_master": "/dev/spidev0.0",
+    "spi_slave": "/dev/spidev0.1",
+    "reset": 17,
+    "dc": 25,
+    "busy": 24,
+    "power": 18,
+    "reinit_each_frame": null
+  }
+}
